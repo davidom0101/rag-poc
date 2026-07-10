@@ -1,0 +1,7 @@
+.env
+venv/
+milvus_demo.db
+extracted_images/
+__pycache__/
+*.pyc
+.claude/
