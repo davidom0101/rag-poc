@@ -1,7 +1,17 @@
+import os
+
+# Force pure offline mode for the local HuggingFace-hosted models (embeddings,
+# Docling's layout detector + TableFormer). Must be set before any huggingface_hub/
+# transformers/docling import, since they read these at import time. This does NOT
+# affect GPT-4o-mini -- that's an OpenAI API call and always needs internet regardless.
+# Requires the models to already be cached locally (they are, after the first run
+# without these vars set) -- otherwise loading fails immediately instead of downloading.
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
 import base64
 import io
 import json
-import os
 from pathlib import Path
 
 from dotenv import load_dotenv

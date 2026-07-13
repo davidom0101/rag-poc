@@ -63,6 +63,10 @@ This document defines the technical specification and step-by-step implementatio
 
 * CPU/GPU: A modern multi-core CPU is sufficient for Docling parsing and embedding generation. LLM inference runs via the OpenAI API, so no local GPU is required for generation.
 
+## Offline Mode
+
+`app.py` sets `HF_HUB_OFFLINE=1` and `TRANSFORMERS_OFFLINE=1` unconditionally at the top of the script, forcing the local HuggingFace-hosted models (`BAAI/bge-small-en-v1.5` embeddings, Docling's `docling-layout-heron` layout detector, and TableFormer) to load strictly from the local cache with no network calls — verified working. This requires those models to already be cached (they are, after any prior run) — on a genuinely first-ever run, loading fails immediately instead of downloading. **This does not make the pipeline fully offline**: GPT-4o-mini (both text synthesis and vision captioning) is an OpenAI API call and always requires internet + `OPENAI_API_KEY`, regardless of this setting. See `multimodal_design_options.md` Option 4 for what a genuinely fully-offline design would need to swap in instead.
+
 ------------------------------
 ## 4. Implementation Step-by-Step## Step 1: Environment Setup
 Create a isolated directory and install the required library ecosystem.
@@ -89,10 +93,20 @@ Create a python script named app.py. This script pulls local configuration param
 
 Docling does not extract any pixel content or visual description by default (`do_picture_description` and `generate_picture_images` both default to `False`) — a picture node only carries a bounding box, so a text-only pipeline is blind to screenshots despite manuals being full of them. `app.py` extracts each screenshot to `./extracted_images/`, captions it via GPT-4o-mini vision at ingestion time (indexed as its own retrievable node alongside the body text), and links any matching text node (both the generated caption and Docling's own native figure captions, e.g. "Figure 3.4 Screenshot of the Toolbox") back to that saved file. At query time retrieval stays 100% text-embedding-driven (no CLIP, no second vector store — see [Known Issue 4](#5-known-issues) for why), but the real screenshot pixels for any matched node are sent into GPT-4o-mini's vision input alongside the retrieved text, so the final answer is grounded in a fresh look at the image rather than a lossy pre-written caption.
 
+import os
+
+# Force pure offline mode for the local HuggingFace-hosted models (embeddings,
+# Docling's layout detector + TableFormer). Must be set before any huggingface_hub/
+# transformers/docling import, since they read these at import time. This does NOT
+# affect GPT-4o-mini -- that's an OpenAI API call and always needs internet regardless.
+# Requires the models to already be cached locally (they are, after the first run
+# without these vars set) -- otherwise loading fails immediately instead of downloading.
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
 import base64
 import io
 import json
-import os
 from pathlib import Path
 
 from dotenv import load_dotenv
