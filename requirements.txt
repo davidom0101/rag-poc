@@ -1,0 +1,9 @@
+docling==2.111.0
+llama-index-core==0.14.23
+llama-index-node-parser-docling==0.4.2
+llama-index-embeddings-huggingface==0.7.0
+llama-index-vector-stores-milvus==1.1.0
+llama-index-llms-openai==0.7.9
+openai==2.45.0
+python-dotenv==1.2.2
+milvus-lite==3.0

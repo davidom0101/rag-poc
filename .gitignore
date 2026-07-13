@@ -5,3 +5,5 @@ extracted_images/
 __pycache__/
 *.pyc
 .claude/
+model_backup/
+model_release_zips
